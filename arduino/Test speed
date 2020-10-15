@@ -1,0 +1,78 @@
+//Finding step responce of instantaneous velocity for the system with 2 wheels spinning. 
+#include <Encoder.h>
+#include "DualMC33926MotorShield.h" //PWm goes from -400 to 400 
+
+#define nD2 4 //tri-state disables both outputs of both motor channels when low
+#define M1Dir 7 // Motor 1 direction input (voltage sign M1)
+#define M2Dir 8 // motor 2 direction input (Voltage sign M2)
+#define M1PWM 9 // Motor 1 speed input (Command Voltage M1)
+#define M2PWM 10 // Motor 2 speed input (command Votlage M2)
+#define nSF 12 //Status flag
+
+Encoder MotorEncoder1(2,5); //used 2 and 3 as they have the best interrupt timing, will need to change when adding second motor
+Encoder MotorEncoder2(3,6); //used 2 and 3 as they have the best interrupt timing, will need to change when adding second motor
+
+int WheelSpinTime=2000; // Spin wheel for 2 seconds
+int sampleTime=10;//10 ms
+int RealTime=0;
+
+//interupt times 
+volatile int interuptTime=0;
+
+
+volatile int counter1,counter2; //coutner for motor 1 and 2 resp.
+volatile double rev1,rev2;// revolutions made for motor 1 and 2 resp.
+volatile double Rad1,Rad2;//Rads for motor 1 and 2 resp.
+volatile double RotationalV1,RotationalV2;
+
+
+String CurrTime;
+String DeltaRad;
+
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(nD2,OUTPUT); 
+   pinMode(M1Dir,OUTPUT);
+   pinMode(M2Dir,OUTPUT);
+   pinMode(M1PWM,OUTPUT);
+   pinMode(M1PWM,OUTPUT);
+   pinMode(nSF,INPUT);      
+   Serial.begin (250000);//baud rate set to 250000
+   attachInterrupt(2,EncoderChange,CHANGE);
+   attachInterrupt(3,EncoderChange,CHANGE);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  while(millis()>RealTime+sampleTime && millis() < WheelSpinTime) // Spins wheel for 1 second every 10ms and collects the angular velocity
+  {
+   analogWrite(7,255); //change to test with our motor 
+   counter1=MotorEncoder1.read();
+   counter2=MotorEncoder2.read();
+   DeltaRad+=RotationalV1+RotationalV2;// Sum of rotational vel of wheel(1) and wheel(2)
+   DeltaRad+=' ';
+   CurrTime+=interuptTime; 
+   CurrTime+=' ';
+   RealTime+=sampleTime;  
+  }
+ if(millis()> WheelSpinTime)
+ {
+  analogWrite(7,0);//change for our motor
+  Serial.println(CurrTime);
+  Serial.println(DeltaRad);
+  
+  } 
+}
+
+//interrupt 
+void EncoderChange ()
+{
+   interuptTime=millis()-interuptTime;
+   rev1=counter1/(64*50); // 64*50 because 64 cnts per rev and 50 gear ratio
+   rev2=counter2/(64*50); // 
+   Rad1= rev1*6.2832;
+   Rad2= rev2*6.2382;
+   RotationalV1=Rad1/interuptTime;//gets rotational velocity of the 1st motor with change in time
+   RotationalV2=Rad2/interuptTime;//gets rotational velocity of the 2nd motor with change in time
+  }
