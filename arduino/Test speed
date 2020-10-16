@@ -12,18 +12,22 @@
 Encoder MotorEncoder1(2,5); //used 2 and 3 as they have the best interrupt timing, will need to change when adding second motor
 Encoder MotorEncoder2(3,6); //used 2 and 3 as they have the best interrupt timing, will need to change when adding second motor
 
-int WheelSpinTime=2000; // Spin wheel for 2 seconds
+int WheelSpinTime=3000; // Spin wheel for 3 seconds
 int sampleTime=10;//10 ms
 int RealTime=0;
-
+int i=0;
 //interupt times 
-volatile int interuptTime=0;
+volatile double interuptTime=0;
 
 
-volatile int counter1,counter2; //coutner for motor 1 and 2 resp.
-volatile double rev1,rev2;// revolutions made for motor 1 and 2 resp.
-volatile double Rad1,Rad2;//Rads for motor 1 and 2 resp.
-volatile double RotationalV1,RotationalV2;
+volatile double counter1=0; //coutner for motor 1 and 2 resp.
+volatile double counter2=0;
+volatile double rev1=0;
+volatile double rev2=0;// revolutions made for motor 1 and 2 resp.
+volatile double Rad1=0;
+volatile double Rad2=0;//Rads for motor 1 and 2 resp.
+volatile double RotationalV1=0;
+volatile double RotationalV2=0;
 
 
 String CurrTime;
@@ -39,8 +43,8 @@ void setup() {
    pinMode(M1PWM,OUTPUT);
    pinMode(nSF,INPUT);      
    Serial.begin (250000);//baud rate set to 250000
-   attachInterrupt(2,EncoderChange,CHANGE);
-   attachInterrupt(3,EncoderChange,CHANGE);
+   attachInterrupt(digitalPinToInterrupt(2),EncoderChange,CHANGE);
+   attachInterrupt(digitalPinToInterrupt(3),EncoderChange,CHANGE);
 }
 
 void loop() {
@@ -50,29 +54,28 @@ void loop() {
    analogWrite(7,255); //change to test with our motor 
    counter1=MotorEncoder1.read();
    counter2=MotorEncoder2.read();
-   DeltaRad+=RotationalV1+RotationalV2;// Sum of rotational vel of wheel(1) and wheel(2)
-   DeltaRad+=' ';
-   CurrTime+=interuptTime; 
-   CurrTime+=' ';
    RealTime+=sampleTime;  
   }
- if(millis()> WheelSpinTime)
+ if(millis()> WheelSpinTime && i==0)
  {
   analogWrite(7,0);//change for our motor
-  Serial.println(CurrTime);
   Serial.println(DeltaRad);
-  
+  i++;
   } 
 }
 
 //interrupt 
-void EncoderChange ()
+void EncoderChange() //This is off needs a troubleshoot
 {
-   interuptTime=millis()-interuptTime;
+   interuptTime=millis();
    rev1=counter1/(64*50); // 64*50 because 64 cnts per rev and 50 gear ratio
    rev2=counter2/(64*50); // 
    Rad1= rev1*6.2832;
    Rad2= rev2*6.2382;
-   RotationalV1=Rad1/interuptTime;//gets rotational velocity of the 1st motor with change in time
-   RotationalV2=Rad2/interuptTime;//gets rotational velocity of the 2nd motor with change in time
+   RotationalV1=Rad1/(interuptTime/1000);//gets rotational velocity of the 1st motor with change in time
+   RotationalV2=Rad2/(interuptTime/1000);//gets rotational velocity of the 2nd motor with change in time
+   DeltaRad+=RotationalV1+RotationalV2;// Sum of rotational vel of wheel(1) and wheel(2)
+   DeltaRad+=' ';
+   CurrTime+=interuptTime; 
+   CurrTime+=' ';
   }
