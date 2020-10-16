@@ -1,0 +1,13 @@
+clear 
+port='COM7';% changes based on system
+obj = serial(port, 'BaudRate', 250000);
+obj.terminator = char(100);
+if isempty(instrfind) %put a ~ before isempty run then remove the ~ and run again that should get the code to work
+     fclose(instrfind);
+      delete(instrfind);
+end
+fopen(obj);
+Velocity=fgets(obj);
+disp(Velocity)
+Rad=[0.00 0.00 0.08 0.07 0.07 0.13 0.12 0.11 0.11 0.10 0.19 0.18 0.17 0.17 0.16 0.16 0.16 0.11 0.11 0.11 0.11 0.10 0.10 0.10 0.10 0.10 0.09 0.09 0.09 0.09 0.09 0.09 0.08 0.06 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.04 0.04 0.04 0.09 0.09 0.08 0.08 0.08 0.08 0.08 0.08 0.08 0.08 0.08 0.12 0.12 0.11 0.11 0.11 0.11 0.11 0.11 0.11 0.11 0.11 0.11 0.11 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.09 0.09 0.09 0.09 0.09 0.09 0.09 0.09 0.09 0.09 0.09 0.09 0.09];
+plot(Rad) %% this came from a previous result I was working with
