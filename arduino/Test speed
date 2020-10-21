@@ -33,7 +33,7 @@ volatile double RotationalV2=0;
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(nD2,OUTPUT); 
+   pinMode(nD2,OUTPUT); 
    pinMode(M1Dir,OUTPUT);
    pinMode(M2Dir,OUTPUT);
    pinMode(M1PWM,OUTPUT);
@@ -48,7 +48,8 @@ void loop() {
   // put your main code here, to run repeatedly:
   while(millis()>RealTime+sampleTime && millis() < WheelSpinTime) // Spins wheel for 1 second every 10ms and collects the angular velocity
   {
-   analogWrite(7,255); //change to test with our motor sets motor to highest speed (will be 400 for us)
+   md.setM1Speed(400); //Full speed for wheel 1
+   md.setM2Speed(400); //Full speed for wheel 2
    counter1=MotorEncoder1.read();
    counter2=MotorEncoder2.read();  
    Serial.println(RotationalV1+RotationalV2); //remove the 100 after testing, used it for easier reading
@@ -56,7 +57,8 @@ void loop() {
   }
  if(millis()> WheelSpinTime && i==0) //stops the motor from running after we reach whatever value is assigned to WheelSpinTime
  {
-  analogWrite(7,0);//change for our motor also just stops the motor from running
+  md.setM1Speed(0); //Stops wheel 1
+  md.setM2Speed(0); //Stops wheel 2 
   i++;
   } 
 }
