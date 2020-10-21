@@ -1,6 +1,7 @@
 //Finding responce of instantaneous velocity for the system with 2 wheels spinning. 
 #include <Encoder.h>
 #include "DualMC33926MotorShield.h" //PWm goes from -400 to 400 
+#include <AutoPID.h>
 
 #define nD2 4 //tri-state disables both outputs of both motor channels when low
 #define M1Dir 7 // Motor 1 direction input (voltage sign M1)
@@ -29,8 +30,16 @@ volatile double Rad2=0;//Rads for motor 1 and 2 resp.
 volatile double RotationalV1=0;
 volatile double RotationalV2=0;
 
+DualMC33926MotorShield md;
 
-
+void stopIfFault()
+{
+  if (md.getFault())
+  {
+    Serial.println("fault");
+    while(1);
+  }
+}
 void setup() {
   // put your setup code here, to run once:
    pinMode(nD2,OUTPUT); 
@@ -38,10 +47,11 @@ void setup() {
    pinMode(M2Dir,OUTPUT);
    pinMode(M1PWM,OUTPUT);
    pinMode(M1PWM,OUTPUT);
-   pinMode(nSF,INPUT);      
+   pinMode(nSF,INPUT);     
    Serial.begin (250000);//baud rate set to 250000
    attachInterrupt(digitalPinToInterrupt(2),EncoderChange,CHANGE);
    attachInterrupt(digitalPinToInterrupt(3),EncoderChange,CHANGE);
+   md.init(); 
 }
 
 void loop() {
