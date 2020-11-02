@@ -1,0 +1,128 @@
+
+//Testing the combination of rotational and forward velocity
+
+
+#include <Encoder.h>
+#include "DualMC33926MotorShield.h" //PWm goes from -400 to 400 
+#include <AutoPID.h>
+
+
+#define nD2 4 //tri-state disables both outputs of both motor channels when low
+#define M1Dir 7 // Motor 1 direction input (voltage sign M1)
+#define M2Dir 8 // motor 2 direction input (Voltage sign M2)
+#define M1PWM 9 // Motor 1 speed input (Command Voltage M1)
+#define M2PWM 10 // Motor 2 speed input (command Votlage M2)
+#define nSF 12 //Status flag
+
+
+// Control variables
+#define kp_W (0.0779305662892494)//Positional por. gain
+#define kd_W (0)//Positional dif. gain
+#define ki_W (0.270532391918187)//Positional int. gain
+
+#define kp_A (7.80106264935576)     //Wheel 2 velocity por. gain
+#define kd_A (0)  //Wheel 2 velocity dif. gain
+#define ki_A (91.4752606263456)   //Wheel 2 velocity int. gain
+
+#define kp_B (8.0959852388045)   //Wheel 2 velocity por. gain
+#define kd_B (0)  //Wheel 2 velocity dif. gain
+#define ki_B (100.851688119788)   //Wheel 2 velocity int. gain
+
+//control variables
+double Vel_A=0; // Linear Velocity of motor 1
+double Vel_B=0; // Linear Velocity of motor 2
+double AngularVel=0; //angular velocity of system
+
+double output_A=0;
+double output_B=0;
+double output_W=0;
+
+double setpoint_A=0; //Wanted wheel 1 velocity
+double setpoint_B=0; //Wanted wheel 2 velocity
+double setpoint_W=0; //Wanted angular Velocity of system
+
+double wantedVel_A=0;
+double wantedVel_B=0;
+double WVel_A=0;
+double WVel_B=0;
+//Calculation variables
+double counter1=0; //counter for motor 1 and 2 resp.
+double counter2=0;
+
+double rev1=0;
+double rev2=0;// revolutions made for motor 1 and 2 resp.
+
+double rev1Prev=0;
+double rev2Prev=0;
+
+//given values
+double r=2.88/12;// Radius of wheel in feet
+double Radius=1; //Radius of circle 
+double l=(13.125)/12; //Distance from wheel 1 to wheel 2
+double Time_1=0; // time delay for next interval
+double Interval_time=5;//sample interval time =5ms
+double omega=0;
+
+AutoPID Vel_A_PID(&Vel_A,&setpoint_A,&output_A,-200,200,kp_A,ki_A,kd_A);
+AutoPID Vel_B_PID(&Vel_B,&setpoint_B,&output_B,-200,200,kp_B,ki_B,kd_B);
+AutoPID angularVel(&AngularVel,&setpoint_W,&output_W,-200,200,kp_W,ki_W,kd_W);
+
+Encoder MotorEncoder1(2,5); 
+Encoder MotorEncoder2(3,6); 
+
+DualMC33926MotorShield motor_shield;
+
+void setup() {
+  // put your setup code here, to run once:
+   pinMode(nD2,OUTPUT); 
+   pinMode(M1Dir,OUTPUT);
+   pinMode(M2Dir,OUTPUT);
+   pinMode(M1PWM,OUTPUT);
+   pinMode(M1PWM,OUTPUT);
+   pinMode(nSF,INPUT);     
+   motor_shield.init(); 
+   Serial.begin (250000);//baud rate set to 250000
+   Vel_A_PID.setTimeStep(Interval_time);
+   Vel_B_PID.setTimeStep(Interval_time);
+   angularVel.setTimeStep(Interval_time);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+    while(millis()>Time_1+Interval_time)
+    {
+      counter1=MotorEncoder1.read();
+      counter2=MotorEncoder2.read();
+
+      rev1=(counter1)/(64*50); // Get revolutions made for motor 1
+      rev2=(counter2)/(64*50); // Get revolutions made for motor 2
+
+      Vel_A=(2*3.14*r*(rev1-rev1Prev))/(Interval_time/1000);
+      Vel_B=(2*3.14*r*(rev2-rev2Prev))/(Interval_time/1000);
+
+      setpoint_W=1; // omega value to be reached
+
+      AngularVel=(Vel_B-Vel_A)/l;
+
+      WVel_A=setpoint_W*(Radius+(l/2));
+      WVel_B=setpoint_W*(Radius-(l/2));
+      
+      setpoint_A=(WVel_A)+wantedVel_A;
+      setpoint_B=(WVel_B)+wantedVel_B;
+
+      Vel_A_PID.run();
+      Vel_B_PID.run();
+
+      motor_shield.setM1Speed(output_A);
+      motor_shield.setM2Speed(output_B);
+
+
+      Serial.print(Vel_A);
+      Serial.print('\t');
+      Serial.println(Vel_B);
+      rev1Prev=rev1;
+      rev2Prev=rev2;
+      
+      Time_1+=Interval_time;
+      }
+}
